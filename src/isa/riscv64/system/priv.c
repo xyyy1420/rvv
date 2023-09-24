@@ -670,6 +670,15 @@ static void csrrw(rtlreg_t *dest, const rtlreg_t *src, uint32_t csrid) {
     longjmp_exception(EX_II);
     return;
   }
+
+  //fix mstatus.vs set to dirty
+  if ((csrid==0x008||csrid==0x009||csrid==0x00a||csrid==0x00f||csrid==0xc20||csrid==0xc21||csrid==0xc22)) {
+    mstatus_t *tmp_mstatus=(void*)csr_decode(0x300);
+    if(tmp_mstatus->vs&0x1||tmp_mstatus->vs&0x2){
+      tmp_mstatus->vs=0x3;
+    }
+  }
+
   word_t *csr = csr_decode(csrid);
   // Log("Decoding csr id %u to %p", csrid, csr);
   word_t tmp = (src != NULL ? *src : 0);
