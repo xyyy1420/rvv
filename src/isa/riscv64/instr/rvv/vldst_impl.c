@@ -47,7 +47,29 @@ void vld(int mode, int is_signed, Decode *s, int mmu_mode) {
 
   word_t idx;
   rtl_mv(s, &(tmp_reg[0]), &(s->src1.val));
-  for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
+
+  int v_regs=vl->val*(s->v_nf+1);
+  int v_vm=s->vm;
+  if (mode==MODE_UNIT) {
+    switch (s->isa.instr.vldfp.v_lumop) {
+      case 0:
+        v_regs=vl->val*(s->v_nf+1);
+        break;
+      case 8:
+        v_regs=VLEN/(s->v_width*8)*(s->v_nf+1);
+        break;
+      case 11:
+        v_vm=1;
+        s->v_width=1;
+        v_regs=vl->val%8==0?vl->val/8:vl->val/8+1;
+        break;
+      case 16:
+        break;
+    }
+  }
+
+//  for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
+  for(idx = vstart->val; idx < v_regs; idx ++) {
     //TODO: SEW now only supports LE 64bit
     //TODO: need special rtl function, but here ignore it
     if(mode == MODE_INDEXED) {
@@ -60,7 +82,8 @@ void vld(int mode, int is_signed, Decode *s, int mmu_mode) {
     rtlreg_t mask = get_mask(0, idx, vtype->vsew, vtype->vlmul);
     
     // op
-    if(s->vm != 0 || mask != 0) {
+//    if(s->vm != 0 || mask != 0) {
+    if(v_vm != 0 || mask != 0) {
       rtl_lm(s, &tmp_reg[1], &tmp_reg[0], 0, s->v_width, mmu_mode);
       if (is_signed) rtl_sext(s, &tmp_reg[1], &tmp_reg[1], s->v_width);
 
@@ -118,9 +141,28 @@ void vst(int mode, Decode *s, int mmu_mode) {
 
   rtl_lr(s, &(s->src1.val), s->src1.reg, 4);
 
+  int v_regs=vl->val*(s->v_nf+1);
+  int v_vm=s->vm;
+  if (mode==MODE_UNIT) {
+    switch (s->isa.instr.vldfp.v_lumop) {
+      case 0:
+        v_regs=vl->val*(s->v_nf+1);
+        break;
+      case 8:
+        v_regs=VLEN/(s->v_width*8)*(s->v_nf+1);
+        break;
+      case 11:
+        v_vm=1;
+        s->v_width=1;
+        v_regs=vl->val%8==0?vl->val/8:vl->val/8+1;
+        break;
+    }
+  }
+
   word_t idx;
   rtl_mv(s, &(tmp_reg[0]), &(s->src1.val));
-  for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
+  for(idx = vstart->val; idx < v_regs; idx ++) {
+  //for(idx = vstart->val; idx < vl->val*(s->v_nf+1); idx ++) {
     //TODO: SEW now only supports LE 64bit
     //TODO: need special rtl function, but here ignore it
     if(mode == MODE_INDEXED) {
@@ -133,7 +175,8 @@ void vst(int mode, Decode *s, int mmu_mode) {
     rtlreg_t mask = get_mask(0, idx, vtype->vsew, vtype->vlmul);
 
     // op
-    if(s->vm != 0 || mask != 0) {
+//    if(s->vm != 0 || mask != 0) {
+    if(v_vm != 0 || mask != 0) {
       get_vreg(id_dest->reg, idx, &tmp_reg[1], vtype->vsew, vtype->vlmul, 0, 1);
       rtl_sm(s, &tmp_reg[1], &tmp_reg[0], 0, s->v_width, mmu_mode);
     }

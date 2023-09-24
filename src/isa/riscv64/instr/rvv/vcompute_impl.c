@@ -664,8 +664,8 @@ void mask_instr(int opcode, Decode *s) {
       case MOR     : rtl_or(s, s1, s0, s1); break;
       case MNOR    : rtl_or(s, s1, s0, s1);
                      *s1 = !(*s1); break;
-      case MORNOT  : *s1 = !(*s1);
-                     rtl_or(s, s1, s0, s1); break;
+      case MORNOT  : *s2 = !(*s1);
+                     rtl_or(s, s1, s0, s2); break;
       case MXNOR   : rtl_xor(s, s1, s0, s1);
                      *s1 = !(*s1); break;
       default      : longjmp_raise_intr(EX_II);
@@ -676,6 +676,7 @@ void mask_instr(int opcode, Decode *s) {
   }
 
   if (AGNOSTIC == 1) {
+    Log("agnostc");
     for (idx = vl->val; idx < VLEN; idx++) {
       set_mask(id_dest->reg, idx, 1, vtype->vsew, vtype->vlmul);
     }
